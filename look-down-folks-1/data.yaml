@@ -1,0 +1,12 @@
+names:
+- person
+nc: 1
+roboflow:
+  license: CC BY 4.0
+  project: look-down-folks
+  url: https://universe.roboflow.com/folks/look-down-folks/dataset/1
+  version: 1
+  workspace: folks
+test: ../test/images
+train: ../train/images
+val: ../valid/images

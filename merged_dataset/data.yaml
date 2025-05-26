@@ -1,0 +1,5 @@
+train: C:\Users\JOASH\OneDrive\Documents\SCHOOL\CSC 126\FINAL PROJECT\yolo8\merged_dataset/images/train
+val: C:\Users\JOASH\OneDrive\Documents\SCHOOL\CSC 126\FINAL PROJECT\yolo8\merged_dataset/images/train
+
+nc: 2
+names: ['civilian', 'soldier']
