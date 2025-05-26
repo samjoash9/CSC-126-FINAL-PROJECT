@@ -96,23 +96,36 @@ class VideoPage(tk.Frame):
         tk.Button(btns, text="Load Video", command=self.load_video).pack(side="left", padx=10)
         tk.Button(btns, text="Stop", command=self.stop_video).pack(side="left", padx=10)
         tk.Button(self, text="Back to Menu",
-                  command=lambda: controller.show_frame(MenuPage)
+                  command=self.back_to_menu
                  ).pack(pady=20)
 
         self.cap = None
         self.running = False
+
+    def back_to_menu(self):
+        self.stop_video()
+        if self.image_id:
+            self.canvas.delete(self.image_id)
+            self.image_id = None
+        self.canvas.image = None
+        self.controller.show_frame(MenuPage)
 
     def load_video(self):
         path = filedialog.askopenfilename(filetypes=[("Video files", "*.mp4 *.avi *.mov")])
         if not path:
             return
 
+        self.stop_video()
+        if self.image_id:
+            self.canvas.delete(self.image_id)
+            self.image_id = None
+        self.canvas.image = None
+
         def start_processing():
             self.cap = cv2.VideoCapture(path)
             self.running = True
             self.process_frame()
 
-        # Ensure model is loaded first
         if self.controller.model is None:
             self.controller.get_model(callback=start_processing)
         else:
@@ -183,15 +196,19 @@ class PicturePage(tk.Frame):
             results = self.controller.model.predict(img)
             for r in results:
                 for box in r.boxes:
-                    xy = box.xyxy[0].cpu().numpy().astype(int)
                     conf = float(box.conf[0].cpu().numpy())
+                    if conf < 0.4:
+                        continue  # Skip low-confidence boxes
+
+                    xy = box.xyxy[0].cpu().numpy().astype(int)
                     cls = int(box.cls[0].cpu().numpy())
-                    label = "civilian" if cls==0 else "soldier"
-                    color = (0,255,0) if cls==0 else (0,0,255)
-                    cv2.rectangle(img, (xy[0],xy[1]),(xy[2],xy[3]), color,2)
+                    label = "civilian" if cls == 0 else "soldier"
+                    color = (0, 255, 0) if cls == 0 else (0, 0, 255)
+                    cv2.rectangle(img, (xy[0], xy[1]), (xy[2], xy[3]), color, 2)
                     cv2.putText(img, f"{label} {conf:.2f}",
-                                (xy[0],xy[1]-10),
-                                cv2.FONT_HERSHEY_SIMPLEX,0.6,color,2)
+                                (xy[0], xy[1] - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+
 
             disp = cv2.resize(img, (800,600))
             rgb = cv2.cvtColor(disp, cv2.COLOR_BGR2RGB)
@@ -207,9 +224,10 @@ class PicturePage(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.attributes("-fullscreen", True)
-    root.overrideredirect(True)
-    root.bind("<Escape>", lambda e: root.destroy())
+    root.title("Soldier vs Civilian Detector")  # Optional: Set a window title
+    root.geometry("1024x768")  # Optional: Set default window size
+    root.minsize(800, 600)     # Optional: Prevent window from becoming too small
+    root.bind("<Escape>", lambda e: root.destroy())  # Keep this for quick close on ESC
 
     style = ttk.Style()
     style.theme_use("clam")
